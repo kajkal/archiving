@@ -11,9 +11,9 @@ import Foundation
 struct DataManager {
         
     // saves data in device memory
-    static func saveData(sensors: [Sensor], readings: [Reading]) {
-        saveSensorsData(sensors: sensors)
-        saveReadingsData(readings: readings)
+    static func saveData(data: (sensors: [Sensor], readings: [Reading])) {
+        saveSensorsData(sensors: data.sensors)
+        saveReadingsData(readings: data.readings)
     }
     
     // loads data from device memory

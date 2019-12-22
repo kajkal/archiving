@@ -11,9 +11,6 @@ import UIKit
 class ViewController: UIViewController {
 
     @IBOutlet weak var resultsLbl: UILabel!
-    
-    var sensors: [Sensor]?
-    var readings: [Reading]?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,23 +27,23 @@ class ViewController: UIViewController {
         let startTime = NSDate();
         
         let readingsCount = 20
-        let (sensors, readings) = DataManager.generateData(readingsCount: readingsCount)
-        self.sensors = sensors
-        self.readings = readings
+        let data = DataManager.generateData(readingsCount: readingsCount)
+        DataManager.saveData(data: data)
         
-        sensors.prefix(5).forEach { $0.toString() }
+        data.sensors.prefix(5).forEach { $0.toString() }
         print("...")
-        readings.prefix(5).forEach { $0.toString() }
+        data.readings.prefix(5).forEach { $0.toString() }
         print("...")
         
-        printLog(message: "Data generated with \(readings.count) readings", startTime: startTime)
+        printLog(message: "Data generated with \(data.readings.count) readings", startTime: startTime)
     }
     
     @IBAction func queryMinMaxTime(_ sender: UIButton) {
         let startTime = NSDate();
+        let data = DataManager.loadData()
 
-        if readings != nil {
-            let timestamps: [Int] = readings!.map { $0.timestamp }
+        if let readings = data.readings {
+            let timestamps: [Int] = readings.map { $0.timestamp }
             let formattedMin = Utils.formatTimestamp(timestamp: timestamps.min()!)
             let formattedMax = Utils.formatTimestamp(timestamp: timestamps.max()!)
             
@@ -59,8 +56,9 @@ class ViewController: UIViewController {
     
     @IBAction func queryAverageValue(_ sender: UIButton) {
         let startTime = NSDate();
+        let data = DataManager.loadData()
         
-        if let readings = self.readings {
+        if let readings = data.readings {
             let valuesSum: Double = readings.map({ $0.value }).reduce(0, +)
             let valuesAvg: Double = valuesSum / Double(readings.count)
             let formattedAvg = String(format: "%.2f", valuesAvg)
@@ -74,8 +72,9 @@ class ViewController: UIViewController {
     
     @IBAction func querySensorAverageValue(_ sender: UIButton) {
         let startTime = NSDate();
+        let data = DataManager.loadData()
         
-        if let readings = self.readings, let sensors = self.sensors {
+        if let readings = data.readings, let sensors = data.sensors {
             var sensorValues = [String: [Double]]()
             sensors.forEach { sensorValues[$0.name] = [] }
             readings.forEach { sensorValues[$0.sensorName]?.append($0.value) }
