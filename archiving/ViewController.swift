@@ -9,11 +9,14 @@
 import UIKit
 
 class ViewController: UIViewController {
+    
+    private var dataManager: DataManager?
 
     @IBOutlet weak var resultsLbl: UILabel!
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        dataManager = DataManager()
     }
     
     private func printLog(message: String, startTime: NSDate) {
@@ -24,83 +27,66 @@ class ViewController: UIViewController {
     }
     
     @IBAction func generateData(_ sender: UIButton) {
-        let startTime = NSDate();
-        
-        let readingsCount = 20
-        let data = DataManager.generateData(readingsCount: readingsCount)
-        DataManager.saveData(data: data)
-        
-        data.sensors.prefix(5).forEach { $0.toString() }
-        print("...")
-        data.readings.prefix(5).forEach { $0.toString() }
-        print("...")
-        
-        printLog(message: "Data generated with \(data.readings.count) readings", startTime: startTime)
+        if let dataManager = self.dataManager {
+            let generateStartTime = NSDate();
+            
+            let data = Utils.generateData()
+            
+            print("Data generated with \(data.readings.count) readings")
+            printLog(message: "Data generated with \(data.readings.count) readings", startTime: generateStartTime)
+                
+            data.sensors.prefix(5).forEach { $0.toString() }
+            print("...")
+            data.readings.prefix(5).forEach { $0.toString() }
+            print("...")
+            
+            let saveStartTime = NSDate();
+
+            dataManager.saveData(data: data)
+            
+            print("data saved in file")
+            printLog(message: "Data saved in file", startTime: saveStartTime)
+        }
     }
     
     @IBAction func queryMinMaxTime(_ sender: UIButton) {
-        let startTime = NSDate();
-        let data = DataManager.loadData()
-
-        if let readings = data.readings {
-            let timestamps: [Int] = readings.map { $0.timestamp }
-            let formattedMin = Utils.formatTimestamp(timestamp: timestamps.min()!)
-            let formattedMax = Utils.formatTimestamp(timestamp: timestamps.max()!)
+        if let dataManager = self.dataManager {
+            let startTime = NSDate();
             
-            print("Min timestamp='formattedMin', Max timestamp='\(formattedMax)'")
+            let (min, max) = dataManager.getMinAndMaxTimestamps()
+            let formattedMin = Utils.formatTimestamp(timestamp: min)
+            let formattedMax = Utils.formatTimestamp(timestamp: max)
+            
+            print("Min timestamp='\(formattedMin)', Max timestamp='\(formattedMax)'")
             printLog(message: "Min='\(formattedMin)', Max='\(formattedMax)'", startTime: startTime)
-        } else {
-            printLog(message: "No reading data available", startTime: startTime)
         }
     }
     
     @IBAction func queryAverageValue(_ sender: UIButton) {
-        let startTime = NSDate();
-        let data = DataManager.loadData()
-        
-        if let readings = data.readings {
-            let valuesSum: Double = readings.map({ $0.value }).reduce(0, +)
-            let valuesAvg: Double = valuesSum / Double(readings.count)
-            let formattedAvg = String(format: "%.2f", valuesAvg)
+        if let dataManager = self.dataManager {
+            let startTime = NSDate();
+            
+            let avgValue = dataManager.getAverageReadingValue()
+            let formattedAvg = String(format: "%.2f", avgValue)
             
             print("Average reading value='\(formattedAvg)'")
-            printLog(message: "Average value='\(formattedAvg)'", startTime: startTime)
-        } else {
-            printLog(message: "No reading data available", startTime: startTime)
+            printLog(message: "Average='\(formattedAvg)'", startTime: startTime)
         }
     }
     
     @IBAction func querySensorAverageValue(_ sender: UIButton) {
-        let startTime = NSDate();
-        let data = DataManager.loadData()
-        
-        if let readings = data.readings, let sensors = data.sensors {
-            var sensorValues = [String: [Double]]()
-            sensors.forEach { sensorValues[$0.name] = [] }
-            readings.forEach { sensorValues[$0.sensorName]?.append($0.value) }
+        if let dataManager = self.dataManager {
+            let startTime = NSDate();
             
-//            dump(sensorValues)
-            
-            for (sensorName, readingValues) in sensorValues {
-                let formattedCount = String(format: "%3d", readingValues.count)
+            for (sensorName, avgAndCount) in dataManager.getAverageReadingValueGroupedBySensor() {
+                let formattedCount = String(format: "%3d", avgAndCount.count)
+                let formattedAvg = String(format: "%.2f", avgAndCount.avg)
 
-                if (readingValues.isEmpty) {
-                    print("Sensor='\(sensorName)', readingCount=\(formattedCount), avg=n/a")
-                } else {
-                    let valuesSum: Double = readingValues.reduce(0, +)
-                    let valuesAvg: Double = valuesSum / Double(readingValues.count)
-                    let formattedAvg = String(format: "%.2f", valuesAvg)
-                    
-                    print("Sensor='\(sensorName)', readingCount=\(formattedCount), avg=\(formattedAvg)")
-                }
+                print("sensorName='\(sensorName)', readingCount=\(formattedCount), avg=\(formattedAvg)")
             }
             
-            printLog(message: "Average value for each sensor calculated", startTime: startTime)
-        } else {
-            printLog(message: "No sensor or reading data available", startTime: startTime)
+            printLog(message: "Average group by sensor calculated", startTime: startTime)
         }
     }
     
-    
 }
-

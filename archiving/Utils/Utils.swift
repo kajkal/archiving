@@ -23,8 +23,33 @@ struct Utils {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "dd-MM-yyyy HH:mm:ss"
+        dateFormatter.dateFormat = "MMM dd hh:mm"
+        
         return dateFormatter.string(from: date)
+    }
+    
+    static func generateData() -> (sensors: [Sensor], readings: [Reading]) {
+        let sensorCount = 20
+        let readingsCount = 20
+        
+        let sensors: [Sensor] = Array(1...sensorCount).map {
+            Sensor(
+                name: "S\(String(format: "%02d", $0))",
+                desc: "Sensor number \($0)"
+            )!
+        }
+        let readings: [Reading] = Array(1...readingsCount).map {_ in
+             Reading(
+               timestamp: Utils.generateTimestamp(),
+               sensorName: sensors[Int.random(in: 0 ..< sensorCount)].name,
+               value: Utils.generateValue()
+           )!
+        }
+        
+        return (
+            sensors: sensors,
+            readings: readings
+        )
     }
     
 }
